@@ -2,16 +2,8 @@ provider "aws" {
   region = "us-east-1"
 }
 
-data "terraform_remote_state" "network" {
-  backend = "remote"
-
-  config = {
-    organization = "spacelift"
-    workspaces = {
-      name = "network-stack"
-    }
-  }
-}
+variable "vpc_id" {}
+variable "subnet_id" {}
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
@@ -21,10 +13,10 @@ module "eks" {
 
   cluster_version = "1.29"
 
-  vpc_id = data.terraform_remote_state.network.outputs.vpc_id
+  vpc_id = var.vpc_id
 
   subnet_ids = [
-    data.terraform_remote_state.network.outputs.subnet_id
+    var.subnet_id
   ]
 
   eks_managed_node_groups = {
