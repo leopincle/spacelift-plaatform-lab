@@ -2,45 +2,31 @@ provider "aws" {
   region = "us-east-1"
 }
 
-resource "aws_vpc" "platform" {
-  cidr_block = "10.0.0.0/16"
+variable "vpc_id" {}
 
-  tags = {
-    Name = "platform-vpc"
+variable "subnet_ids" {
+  type = any
+}
+
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 20.0"
+
+  cluster_name    = "spacelift-eks"
+  cluster_version = "1.29"
+
+  vpc_id     = var.vpc_id
+  subnet_ids = tolist(var.subnet_ids)
+
+  enable_cluster_creator_admin_permissions = true
+
+  eks_managed_node_groups = {
+    default = {
+      desired_size = 1
+      max_size     = 1
+      min_size     = 1
+
+      instance_types = ["t3.small"]
+    }
   }
-}
-
-resource "aws_subnet" "public_a" {
-  vpc_id            = aws_vpc.platform.id
-  cidr_block        = "10.0.1.0/24"
-  availability_zone = "us-east-1a"
-
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name = "platform-subnet-a"
-  }
-}
-
-resource "aws_subnet" "public_b" {
-  vpc_id            = aws_vpc.platform.id
-  cidr_block        = "10.0.2.0/24"
-  availability_zone = "us-east-1b"
-
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name = "platform-subnet-b"
-  }
-}
-
-output "vpc_id" {
-  value = aws_vpc.platform.id
-}
-
-output "subnet_ids" {
-  value = [
-    aws_subnet.public_a.id,
-    aws_subnet.public_b.id
-  ]
 }
